@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import Button from "@mui/material/Button";
 import { ValidatorForm, TextValidator } from "react-material-ui-form-validator";
 import Navbar from "./Navbar";
-import Stack from "@mui/material/Stack";
 import Snackbar from "@mui/material/Snackbar";
 import MuiAlert from "@mui/material/Alert";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -13,8 +13,9 @@ const Alert = React.forwardRef(function Alert(props, ref) {
 
 function SignupValidator(props) {
   const {
+    users,
     addNewUser,
-    clearData,
+    clearSignupData,
     email,
     setEmail,
     password,
@@ -35,11 +36,13 @@ function SignupValidator(props) {
     setAge,
     step,
     setStep,
+    isSignedin,
+    setIsSignedin,
   } = props;
 
   const navigate = useNavigate();
 
-  //   useEffect(() => customValidators(), [password, phoneNumber]);
+  useEffect(() => customValidators(), [password]);
 
   const [showSnackBar, setShowSnackBar] = useState(false);
 
@@ -48,14 +51,12 @@ function SignupValidator(props) {
     alert("You've been successfully registered");
     addNewUser();
     setStep(0);
-    clearData();
+    clearSignupData();
     navigate("/");
   };
 
   const handleSubmit = () => {
-    console.log("submited");
     setStep((prev) => prev + 1);
-    console.log("test");
     step > 1 && handleFormSubmit();
   };
 
@@ -70,26 +71,30 @@ function SignupValidator(props) {
     setStep((prev) => prev - 1);
   };
 
-  /*   const customValidators = () => {
+  const customValidators = () => {
     ValidatorForm.addValidationRule("isPasswordsMatch", (value) => {
       if (value !== password) {
-        const check = ValidatorForm.hasValidationRule("minStringLength");
-        console.log(check);
         return false;
       }
       return true;
     });
-    ValidatorForm.addValidationRule("checkLength", (value) => {
-      if (value.length < 11) {
+
+    ValidatorForm.addValidationRule("isEmailRepeated", (value) => {
+      const emailCheck = users.some((user) => user.email === value);
+      if (emailCheck) {
         return false;
       }
       return true;
     });
-  }; */
+  };
 
   return (
-    <div>
-      <Navbar />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <Navbar setIsSignedin={setIsSignedin} isSignedin={isSignedin} />
 
       <div style={{ margin: "20px" }}>
         <h3>SIGNING UP</h3>
@@ -113,15 +118,18 @@ function SignupValidator(props) {
             value={step === 0 ? email : step === 1 ? firstName : fathersName}
             validators={
               step === 0
-                ? ["required", "isEmail"]
+                ? ["required", "isEmail", "isEmailRepeated"]
                 : step === 1
                 ? ["required"]
                 : ["required"]
             }
-            //FIXME: also change validators by step change
             errorMessages={
               step === 0
-                ? ["This field is required", "Email is not valid"]
+                ? [
+                    "This field is required",
+                    "Email is not valid",
+                    "This Email has already been registered!",
+                  ]
                 : step === 1
                 ? [
                     "This field is required",
@@ -184,15 +192,17 @@ function SignupValidator(props) {
             value={step === 0 ? confirmedPass : step === 1 ? phoneNumber : age}
             validators={
               step === 0
-                ? ["required"]
+                ? ["required", "isPasswordsMatch"]
                 : step === 1
                 ? ["required", "isNumber", "isPositive"]
                 : ["required", "isNumber"]
             }
-            //FIXME: two custom rules : is password match , checkLength
             errorMessages={
               step == 0
-                ? ["This field is required"]
+                ? [
+                    "This field is required",
+                    "Entered passwrods are not the same!",
+                  ]
                 : step === 1
                 ? [
                     "This field is required",
@@ -239,9 +249,8 @@ function SignupValidator(props) {
           You've been successfully registered
         </Alert>
       </Snackbar>
-    </div>
+    </motion.div>
   );
 }
-//FIXME: snackbar doesnt work cauuse it goes to prev page
 
 export default SignupValidator;
